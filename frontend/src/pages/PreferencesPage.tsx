@@ -138,8 +138,8 @@ export default function PreferencesPage() {
     try {
       await updateUserPreferences(selectedUser.id, {
         channels: prefs.channels,
-        quietHoursStart: prefs.quietHoursStart || null,
-        quietHoursEnd: prefs.quietHoursEnd || null,
+        quietHoursStart: prefs.quietHoursStart || undefined,
+        quietHoursEnd: prefs.quietHoursEnd || undefined,
         language: "en-IN",
       });
       setToast({ message: "Preferences saved", success: true });

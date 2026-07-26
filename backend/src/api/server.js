@@ -8,6 +8,7 @@ const express_1 = __importDefault(require("express"));
 const cors_1 = __importDefault(require("cors"));
 const helmet_1 = __importDefault(require("helmet"));
 const routes_1 = __importDefault(require("./routes"));
+const proxy_1 = __importDefault(require("../routes/proxy"));
 const correlation_1 = require("./middleware/correlation");
 const logging_1 = require("./middleware/logging");
 const error_1 = require("./middleware/error");
@@ -27,6 +28,7 @@ function createServer() {
     app.use(correlation_1.correlationMiddleware);
     app.use(logging_1.requestLogger);
     app.use("/api", routes_1.default);
+    app.use("/api/proxy", proxy_1.default);
     // Prometheus metrics endpoint (reuses existing metrics server on :9090)
     // but also expose a simple /metrics here for convenience
     app.get("/metrics", (_req, res) => {

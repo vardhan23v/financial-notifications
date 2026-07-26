@@ -8,7 +8,7 @@ const url_1 = require("url");
 // embed the result in an iframe.
 // ---------------------------------------------------------------------------
 const router = (0, express_1.Router)();
-router.get("/proxy/website", async (req, res) => {
+router.get("/website", async (req, res) => {
     const url = req.query.url;
     if (!url) {
         res.status(400).json({ error: "Missing required query parameter: url" });

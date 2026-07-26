@@ -24,7 +24,7 @@ import {
 
 export default function TemplatesPage() {
   const [templates, setTemplates] = useState<Template[]>([]);
-  const [total, setTotal] = useState(0);
+  const [_total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);

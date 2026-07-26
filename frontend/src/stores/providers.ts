@@ -13,7 +13,7 @@ interface ProviderStore {
   toggle: (id: string, isActive: boolean) => Promise<void>;
 }
 
-export const useProviderStore = create<ProviderStore>((set, get) => ({
+export const useProviderStore = create<ProviderStore>((set) => ({
   providers: [],
   loading: false,
   error: null,

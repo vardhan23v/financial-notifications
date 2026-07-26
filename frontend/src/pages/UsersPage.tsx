@@ -258,7 +258,7 @@ export default function UsersPage() {
                             : [...current, ch];
                           setEditing({
                             ...editing,
-                            preferences: { ...editing.preferences, channels: updated },
+                            preferences: { ...(editing.preferences ?? { channels: [] }), channels: updated },
                           });
                         }}
                         className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${
@@ -282,7 +282,7 @@ export default function UsersPage() {
                   onChange={(e) =>
                     setEditing({
                       ...editing,
-                      preferences: { ...editing.preferences, language: e.target.value },
+                      preferences: { ...(editing.preferences ?? { channels: [] }), language: e.target.value },
                     })
                   }
                   placeholder="e.g. en, hi"
@@ -299,7 +299,7 @@ export default function UsersPage() {
                     onChange={(e) =>
                       setEditing({
                         ...editing,
-                        preferences: { ...editing.preferences, quietHoursStart: e.target.value },
+                        preferences: { ...(editing.preferences ?? { channels: [] }), quietHoursStart: e.target.value },
                       })
                     }
                     className="w-full px-3 py-2 bg-background border border-border rounded-lg text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary/30"
@@ -313,7 +313,7 @@ export default function UsersPage() {
                     onChange={(e) =>
                       setEditing({
                         ...editing,
-                        preferences: { ...editing.preferences, quietHoursEnd: e.target.value },
+                        preferences: { ...(editing.preferences ?? { channels: [] }), quietHoursEnd: e.target.value },
                       })
                     }
                     className="w-full px-3 py-2 bg-background border border-border rounded-lg text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary/30"

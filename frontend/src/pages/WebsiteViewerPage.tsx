@@ -1,12 +1,26 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
-import { Globe, ExternalLink, AlertTriangle } from "lucide-react";
+import { Globe, ExternalLink, AlertTriangle, Loader2 } from "lucide-react";
+import { fetchProxiedWebsite } from "../lib/api";
 
 export default function WebsiteViewerPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const initialUrl = searchParams.get("url") ?? "";
   const [inputValue, setInputValue] = useState(initialUrl);
   const [targetUrl, setTargetUrl] = useState(initialUrl);
+  const [htmlContent, setHtmlContent] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!targetUrl || !/^https?:\/\//i.test(targetUrl)) return;
+    setLoading(true);
+    setError(null);
+    fetchProxiedWebsite(targetUrl)
+      .then((html) => setHtmlContent(html))
+      .catch((err) => setError(err instanceof Error ? err.message : "Failed to load website"))
+      .finally(() => setLoading(false));
+  }, [targetUrl]);
 
   const isValidUrl = /^https?:\/\//i.test(targetUrl);
 
@@ -84,18 +98,32 @@ export default function WebsiteViewerPage() {
               Open
             </a>
           </div>
-          <iframe
-            src={`/api/proxy/website?url=${encodeURIComponent(targetUrl)}`}
-            title="Website Viewer"
-            sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
-            className="w-full border-0"
-            style={{ height: "calc(100vh - 280px)", minHeight: "400px" }}
-          />
+          {loading && (
+            <div className="flex items-center justify-center py-20 text-text-muted gap-3">
+              <Loader2 className="w-8 h-8 animate-spin" />
+              <span className="text-sm">Loading website...</span>
+            </div>
+          )}
+          {error && (
+            <div className="flex items-center justify-center py-20 text-error gap-3">
+              <AlertTriangle className="w-5 h-5" />
+              <span className="text-sm">{error}</span>
+            </div>
+          )}
+          {htmlContent !== null && !loading && !error && (
+            <iframe
+              srcDoc={htmlContent}
+              title="Website Viewer"
+              sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+              className="w-full border-0"
+              style={{ height: "calc(100vh - 280px)", minHeight: "400px" }}
+            />
+          )}
         </div>
       )}
 
       {/* Empty State */}
-      {!isValidUrl && (
+      {!isValidUrl && !loading && (
         <div className="flex flex-col items-center justify-center py-20 text-text-muted gap-3">
           <Globe className="w-16 h-16 opacity-20" />
           <p className="text-lg font-medium">No website loaded</p>

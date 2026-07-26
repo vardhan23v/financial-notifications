@@ -1,5 +1,4 @@
 import { createServer } from "./api/server";
-import proxyRouter from "./routes/proxy";
 import { getLogger } from "../../src/logging";
 import { startMetricsServer } from "../../src/metrics";
 import { initTracing } from "../../src/tracing";
@@ -24,19 +23,17 @@ async function main(): Promise<void> {
   // Start metrics server
   startMetricsServer(METRICS_PORT);
 
-  // Start messaging consumers
-  await startKafkaConsumer();
-  await startRabbitMQConsumer();
-
-  // Create and start HTTP server
+  // Create and start HTTP server first so API endpoints are available
+  // immediately, even if messaging consumers take time to connect.
   const app = createServer();
 
-  // Register /api/proxy/website — fetches external websites server-side
-  // and strips X-Frame-Options/CSP so the frontend can embed in an iframe.
-  app.use("/api/proxy", proxyRouter);
   const server = app.listen(PORT, () => {
     log.info(`Backend API listening on :${PORT}`);
     log.info(`Metrics available on :${METRICS_PORT}/metrics`);
+
+    // Start messaging consumers in the background — don't block the HTTP server
+    startKafkaConsumer().catch((err) => log.error({ err }, "Kafka consumer failed"));
+    startRabbitMQConsumer().catch((err) => log.error({ err }, "RabbitMQ consumer failed"));
   });
 
   // Graceful shutdown

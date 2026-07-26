@@ -19,14 +19,15 @@ async function main() {
     log.info("Backend starting...");
     // Start metrics server
     (0, metrics_1.startMetricsServer)(METRICS_PORT);
-    // Start messaging consumers
-    await (0, kafka_consumer_1.startKafkaConsumer)();
-    await (0, rabbitmq_consumer_1.startRabbitMQConsumer)();
-    // Create and start HTTP server
+    // Create and start HTTP server first so API endpoints are available
+    // immediately, even if messaging consumers take time to connect.
     const app = (0, server_1.createServer)();
     const server = app.listen(PORT, () => {
         log.info(`Backend API listening on :${PORT}`);
         log.info(`Metrics available on :${METRICS_PORT}/metrics`);
+        // Start messaging consumers in the background — don't block the HTTP server
+        (0, kafka_consumer_1.startKafkaConsumer)().catch((err) => log.error({ err }, "Kafka consumer failed"));
+        (0, rabbitmq_consumer_1.startRabbitMQConsumer)().catch((err) => log.error({ err }, "RabbitMQ consumer failed"));
     });
     // Graceful shutdown
     const shutdown = async (signal) => {

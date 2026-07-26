@@ -1,7 +1,4 @@
 "use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const status_1 = require("./controllers/status");
@@ -12,7 +9,6 @@ const providers_1 = require("./controllers/providers");
 const templates_1 = require("./controllers/templates");
 const users_1 = require("./controllers/users");
 const analytics_1 = require("../repositories/analytics");
-const proxy_1 = __importDefault(require("../routes/proxy"));
 const router = (0, express_1.Router)();
 // Health
 router.get("/health", (_req, res) => {
@@ -67,7 +63,5 @@ router.get("/analytics/stream", async (_req, res) => {
         clearInterval(interval);
     });
 });
-// Proxy
-router.use(proxy_1.default);
 exports.default = router;
 //# sourceMappingURL=routes.js.map

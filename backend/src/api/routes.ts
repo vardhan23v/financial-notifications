@@ -7,7 +7,6 @@ import { getProviders, toggleProvider } from "./controllers/providers";
 import { getTemplates, createTemplateHandler, updateTemplateHandler, deleteTemplateHandler } from "./controllers/templates";
 import { getUsers, updatePreferences } from "./controllers/users";
 import { aggregateMetrics } from "../repositories/analytics";
-import proxyRoutes from "../routes/proxy";
 
 const router = Router();
 
@@ -76,8 +75,5 @@ router.get("/analytics/stream", async (_req: Request, res: Response) => {
     clearInterval(interval);
   });
 });
-
-// Proxy
-router.use(proxyRoutes);
 
 export default router;
