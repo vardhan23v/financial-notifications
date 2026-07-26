@@ -1,6 +1,6 @@
 # pro4 — Event-Driven Financial Notification Engine
 
-[![Build Status](https://img.shields.io/badge/build-passing-brightgreen)](https://github.com/vardhan23v/pro4)
+[![Build Status](https://img.shields.io/badge/build-passing-brightgreen)](https://github.com/vardhan23v/financial-notifications)
 [![License](https://img.shields.io/badge/license-MIT-blue)](./LICENSE)
 [![TypeScript](https://img.shields.io/badge/TypeScript-6.0-blue)](https://www.typescriptlang.org/)
 [![React](https://img.shields.io/badge/React-19-61DAFB)](https://react.dev/)
@@ -54,8 +54,8 @@
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/vardhan23v/pro4.git
-cd pro4
+git clone https://github.com/vardhan23v/financial-notifications.git
+cd financial-notifications
 ```
 
 ### 2. Install dependencies
