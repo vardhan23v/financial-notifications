@@ -21,6 +21,8 @@ async function main() {
     (0, metrics_1.startMetricsServer)(METRICS_PORT);
     // Create and start HTTP server first so API endpoints are available
     // immediately, even if messaging consumers take time to connect.
+    // Routes: /api/health, /api/status, /api/events, /api/notifications,
+    // /api/dlq, /api/providers, /api/templates, /api/users, /api/proxy/website
     const app = (0, server_1.createServer)();
     const server = app.listen(PORT, () => {
         log.info(`Backend API listening on :${PORT}`);

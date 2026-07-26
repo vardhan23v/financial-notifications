@@ -25,6 +25,8 @@ async function main(): Promise<void> {
 
   // Create and start HTTP server first so API endpoints are available
   // immediately, even if messaging consumers take time to connect.
+  // Routes: /api/health, /api/status, /api/events, /api/notifications,
+  // /api/dlq, /api/providers, /api/templates, /api/users, /api/proxy/website
   const app = createServer();
 
   const server = app.listen(PORT, () => {
