@@ -1,4 +1,5 @@
 import { Router, Request, Response } from "express";
+import { URL } from "url";
 
 // ---------------------------------------------------------------------------
 // Proxy Route — fetches a target URL server-side and returns the body as
@@ -8,7 +9,7 @@ import { Router, Request, Response } from "express";
 
 const router = Router();
 
-router.get("/proxy/website", async (req: Request, res: Response) => {
+router.get("/website", async (req: Request, res: Response) => {
   const url = req.query.url as string | undefined;
 
   if (!url) {
@@ -16,10 +17,47 @@ router.get("/proxy/website", async (req: Request, res: Response) => {
     return;
   }
 
-  // Basic validation: only allow http and https
+  // Validate: only allow http and https
   if (!/^https?:\/\//i.test(url)) {
     res.status(400).json({ error: "URL must start with http:// or https://" });
     return;
+  }
+
+  // Parse the URL and reject private / loopback addresses
+  let parsed: URL;
+  try {
+    parsed = new URL(url);
+  } catch {
+    res.status(400).json({ error: "Invalid URL" });
+    return;
+  }
+
+  const hostname = parsed.hostname.toLowerCase();
+
+  // Block localhost variants
+  if (hostname === "localhost" || hostname === "127.0.0.1" || hostname === "::1" || hostname === "0.0.0.0") {
+    res.status(400).json({ error: "Requests to localhost are not allowed" });
+    return;
+  }
+
+  // Block private IPv4 ranges: 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16
+  const ipv4Match = hostname.match(
+    /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/,
+  );
+  if (ipv4Match) {
+    const [, a, b] = ipv4Match.map(Number);
+    if (a === 10) {
+      res.status(400).json({ error: "Requests to private networks are not allowed" });
+      return;
+    }
+    if (a === 172 && b >= 16 && b <= 31) {
+      res.status(400).json({ error: "Requests to private networks are not allowed" });
+      return;
+    }
+    if (a === 192 && b === 168) {
+      res.status(400).json({ error: "Requests to private networks are not allowed" });
+      return;
+    }
   }
 
   try {
@@ -46,8 +84,13 @@ router.get("/proxy/website", async (req: Request, res: Response) => {
       }
     });
 
-    // Always set our own content-type to text/html so the iframe renders it
-    res.status(200).type("text/html").send(body);
+    // Explicitly remove helmet-set headers that would block iframe embedding
+    res.removeHeader("X-Frame-Options");
+    res.removeHeader("Content-Security-Policy");
+
+    // Use upstream Content-Type, default to text/html
+    const contentType = upstream.headers.get("content-type") || "text/html";
+    res.status(200).type(contentType).send(body);
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
     res.status(502).json({ error: `Failed to fetch upstream URL: ${message}` });

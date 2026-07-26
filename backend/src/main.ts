@@ -1,4 +1,5 @@
 import { createServer } from "./api/server";
+import proxyRouter from "./routes/proxy";
 import { getLogger } from "../../src/logging";
 import { startMetricsServer } from "../../src/metrics";
 import { initTracing } from "../../src/tracing";
@@ -29,6 +30,10 @@ async function main(): Promise<void> {
 
   // Create and start HTTP server
   const app = createServer();
+
+  // Register /api/proxy/website — fetches external websites server-side
+  // and strips X-Frame-Options/CSP so the frontend can embed in an iframe.
+  app.use("/api/proxy", proxyRouter);
   const server = app.listen(PORT, () => {
     log.info(`Backend API listening on :${PORT}`);
     log.info(`Metrics available on :${METRICS_PORT}/metrics`);

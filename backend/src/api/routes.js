@@ -11,6 +11,7 @@ const dlq_1 = require("./controllers/dlq");
 const providers_1 = require("./controllers/providers");
 const templates_1 = require("./controllers/templates");
 const users_1 = require("./controllers/users");
+const analytics_1 = require("../repositories/analytics");
 const proxy_1 = __importDefault(require("../routes/proxy"));
 const router = (0, express_1.Router)();
 // Health
@@ -38,6 +39,34 @@ router.delete("/templates/:id", templates_1.deleteTemplateHandler);
 // Users
 router.get("/users", users_1.getUsers);
 router.patch("/users/:userId/preferences", users_1.updatePreferences);
+// Analytics SSE — streams MetricsSnapshot every 5 seconds
+router.get("/analytics/stream", async (_req, res) => {
+    res.writeHead(200, {
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-cache",
+        Connection: "keep-alive",
+        "X-Accel-Buffering": "no",
+    });
+    // Send an initial comment to establish the connection
+    res.write(": connected\n\n");
+    const sendSnapshot = async () => {
+        try {
+            const snapshot = await (0, analytics_1.aggregateMetrics)(5);
+            res.write(`data: ${JSON.stringify(snapshot)}\n\n`);
+        }
+        catch (err) {
+            res.write(`event: error\ndata: ${JSON.stringify({ error: "Failed to aggregate metrics" })}\n\n`);
+        }
+    };
+    // Send first snapshot immediately
+    await sendSnapshot();
+    // Then every 5 seconds
+    const interval = setInterval(sendSnapshot, 5000);
+    // Clean up on client disconnect
+    _req.on("close", () => {
+        clearInterval(interval);
+    });
+});
 // Proxy
 router.use(proxy_1.default);
 exports.default = router;

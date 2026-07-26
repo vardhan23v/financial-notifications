@@ -1,48 +1,14 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
-import { Globe, ExternalLink, AlertTriangle, Loader2 } from "lucide-react";
-import { fetchProxiedWebsite } from "../lib/api";
+import { Globe, ExternalLink, AlertTriangle } from "lucide-react";
 
 export default function WebsiteViewerPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const initialUrl = searchParams.get("url") ?? "";
   const [inputValue, setInputValue] = useState(initialUrl);
   const [targetUrl, setTargetUrl] = useState(initialUrl);
-  const [htmlContent, setHtmlContent] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
-  // Fetch proxied HTML whenever targetUrl changes
-  useEffect(() => {
-    if (!targetUrl) {
-      setHtmlContent(null);
-      setError(null);
-      return;
-    }
-
-    let cancelled = false;
-    setLoading(true);
-    setError(null);
-    setHtmlContent(null);
-
-    fetchProxiedWebsite(targetUrl)
-      .then((html) => {
-        if (!cancelled) {
-          setHtmlContent(html);
-          setLoading(false);
-        }
-      })
-      .catch((err) => {
-        if (!cancelled) {
-          setError(err instanceof Error ? err.message : "Failed to load website");
-          setLoading(false);
-        }
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [targetUrl]);
+  const isValidUrl = /^https?:\/\//i.test(targetUrl);
 
   const handleSubmit = useCallback(
     (e: React.FormEvent) => {
@@ -94,32 +60,14 @@ export default function WebsiteViewerPage() {
         </div>
         <button
           type="submit"
-          disabled={loading}
-          className="px-5 py-2.5 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary-dark transition-colors shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="px-5 py-2.5 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary-dark transition-colors shrink-0"
         >
-          {loading ? "Loading..." : "Load"}
+          Load
         </button>
       </form>
 
-      {/* Loading State */}
-      {loading && (
-        <div className="flex flex-col items-center justify-center py-20 text-text-muted gap-3">
-          <Loader2 className="w-10 h-10 text-primary animate-spin" />
-          <p className="text-sm font-medium">Loading {targetUrl}…</p>
-        </div>
-      )}
-
-      {/* Error State */}
-      {!loading && error && (
-        <div className="flex flex-col items-center justify-center py-20 text-text-muted gap-3">
-          <AlertTriangle className="w-10 h-10 text-danger" />
-          <p className="text-sm font-medium text-danger">Failed to load website</p>
-          <p className="text-xs text-text-muted max-w-md text-center">{error}</p>
-        </div>
-      )}
-
       {/* Iframe Viewer */}
-      {!loading && !error && htmlContent !== null && (
+      {isValidUrl && (
         <div className="bg-surface rounded-xl border border-border overflow-hidden">
           <div className="flex items-center justify-between px-4 py-2.5 border-b border-border bg-background/50">
             <div className="flex items-center gap-2 text-sm text-text-muted min-w-0">
@@ -137,7 +85,7 @@ export default function WebsiteViewerPage() {
             </a>
           </div>
           <iframe
-            srcDoc={htmlContent}
+            src={`/api/proxy/website?url=${encodeURIComponent(targetUrl)}`}
             title="Website Viewer"
             sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
             className="w-full border-0"
@@ -147,7 +95,7 @@ export default function WebsiteViewerPage() {
       )}
 
       {/* Empty State */}
-      {!loading && !error && htmlContent === null && (
+      {!isValidUrl && (
         <div className="flex flex-col items-center justify-center py-20 text-text-muted gap-3">
           <Globe className="w-16 h-16 opacity-20" />
           <p className="text-lg font-medium">No website loaded</p>

@@ -16,7 +16,12 @@ const error_1 = require("./middleware/error");
 // ---------------------------------------------------------------------------
 function createServer() {
     const app = (0, express_1.default)();
-    app.use((0, helmet_1.default)());
+    // Configure helmet: disable X-Frame-Options and CSP so the proxy route
+    // can serve external websites in an iframe without those headers.
+    app.use((0, helmet_1.default)({
+        crossOriginEmbedderPolicy: false,
+        contentSecurityPolicy: false,
+    }));
     app.use((0, cors_1.default)());
     app.use(express_1.default.json());
     app.use(correlation_1.correlationMiddleware);
