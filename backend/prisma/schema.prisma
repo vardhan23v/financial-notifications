@@ -1,0 +1,179 @@
+// ---------------------------------------------------------------------------
+// Prisma schema for pro4 — Event-Driven Notification Engine
+// ---------------------------------------------------------------------------
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------------
+// User — core identity for notification recipients
+// ---------------------------------------------------------------------------
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  phone     String?
+  name      String
+  pan       String?  @unique // PAN card — Indian tax identifier
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  preferences UserPreferences?
+  notifications Notification[]
+}
+
+// ---------------------------------------------------------------------------
+// UserPreferences — per-user channel and delivery preferences
+// ---------------------------------------------------------------------------
+model UserPreferences {
+  id        String   @id @default(uuid())
+  userId    String   @unique
+  channels  String[] // e.g. ["EMAIL", "SMS", "PUSH", "WHATSAPP"]
+  quietHoursStart String? // HH:mm format
+  quietHoursEnd   String?
+  language  String   @default("en-IN")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+// ---------------------------------------------------------------------------
+// NotificationTemplate — templated messages per event type and channel
+// ---------------------------------------------------------------------------
+model NotificationTemplate {
+  id        String   @id @default(uuid())
+  eventType String   // e.g. "margin_call", "trade_confirmation"
+  channel   String   // e.g. "EMAIL", "SMS", "PUSH"
+  subject   String   // Template subject line (Handlebars)
+  body      String   // Template body (Handlebars)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  locales TemplateLocale[]
+
+  @@unique([eventType, channel])
+}
+
+// ---------------------------------------------------------------------------
+// DeliveryProvider — external provider integrations
+// ---------------------------------------------------------------------------
+model DeliveryProvider {
+  id        String   @id @default(uuid())
+  name      String   @unique // e.g. "twilio-sms", "sendgrid-email"
+  channel   String   // e.g. "SMS", "EMAIL", "PUSH", "WHATSAPP"
+  priority  Int      @default(1) // Lower = higher priority for fallback
+  config    Json     @default("{}") // Provider-specific configuration
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ---------------------------------------------------------------------------
+// RegulatoryRule — regulatory mandates that override user preferences
+// ---------------------------------------------------------------------------
+model RegulatoryRule {
+  id        String   @id @default(uuid())
+  regulator String   // e.g. "SEBI", "RBI", "IRDAI"
+  eventType String   // e.g. "margin_call", "trade_confirmation"
+  channel   String   // Mandated channel, e.g. "SMS"
+  priority  Int      @default(0) // Higher = takes precedence
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([regulator, eventType])
+}
+
+// ---------------------------------------------------------------------------
+// TemplateLocale — localized template variants
+// ---------------------------------------------------------------------------
+model TemplateLocale {
+  id         String   @id @default(uuid())
+  templateId String
+  locale     String   // e.g. "en-IN", "hi-IN", "gu-IN", "mr-IN", "ta-IN"
+  subject    String   // Localized subject line (Handlebars)
+  body       String   // Localized body (Handlebars)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  template NotificationTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  @@unique([templateId, locale])
+}
+
+// ---------------------------------------------------------------------------
+// DNDRegistry — TRAI DND opt-out records
+// ---------------------------------------------------------------------------
+model DNDRegistry {
+  id              String   @id @default(uuid())
+  phone           String   // Phone number registered for DND
+  channel         String   // "SMS" or "WHATSAPP"
+  exemptCategories String[] // Event categories exempt from DND (transactional)
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([phone, channel])
+}
+
+// ---------------------------------------------------------------------------
+// Notification — audit log of sent notifications
+// ---------------------------------------------------------------------------
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  eventId   String
+  eventType String
+  channel   String
+  status    String   // "SENT", "FAILED", "PENDING", "DLQ"
+  error     String?
+  createdAt DateTime @default(now())
+
+user User @relation(fields: [userId], references: [id])
+}
+
+// ---------------------------------------------------------------------------
+// NotificationDelivery — per-delivery lifecycle tracking
+// ---------------------------------------------------------------------------
+model NotificationDelivery {
+  id             String   @id @default(uuid())
+  notificationId String
+  userId         String
+  channel        String
+  provider       String
+  status         String   // "PENDING", "SENT", "FAILED", "DLQ"
+  metadata       Json     @default("{}")
+  sentAt         DateTime?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([notificationId])
+  @@index([userId])
+  @@index([status])
+}
+
+// ---------------------------------------------------------------------------
+// AnalyticsEvent — raw analytics event for time-series aggregation
+// ---------------------------------------------------------------------------
+model AnalyticsEvent {
+  id         String   @id @default(uuid())
+  eventType  String
+  channel    String
+  status     String
+  userId     String
+  provider   String   @default("")
+  durationMs Int      @default(0)
+  metadata   Json     @default("{}")
+  createdAt  DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([eventType])
+  @@index([channel])
+}

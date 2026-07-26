@@ -1,0 +1,27 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "commonjs",
+    "lib": ["ES2022"],
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "baseUrl": ".",
+    "paths": {
+      "@pro4/backend/*": ["backend/src/*"],
+      "@pro4/packages/*": ["packages/*/src"],
+      "@pro4/shared/*": ["packages/shared/src/*"]
+    }
+  },
+  "include": [
+    "backend/src/**/*",
+    "packages/*/src/**/*",
+    "src/**/*"
+  ],
+  "exclude": ["node_modules", "dist", "tests", "frontend"]
+}
